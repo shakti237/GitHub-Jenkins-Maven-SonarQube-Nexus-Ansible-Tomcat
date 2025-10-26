@@ -8,25 +8,31 @@
   
   tasks:
     - name: Stop Tomcat
-      shell: "{{ tomcat_home }}/bin/shutdown.sh"
+      shell: "cd {{ tomcat_home }} && {{ tomcat_home }}/bin/shutdown.sh"
       args:
         executable: /bin/bash
       ignore_errors: yes
 
     - name: Wait for Tomcat to stop
-      wait_for:
-        port: 8080
-        state: stopped
-        timeout: 30
-      ignore_errors: yes
+      pause:
+        seconds: 10
 
     - name: Kill any remaining Tomcat processes
       shell: "pkill -9 -f tomcat"
       ignore_errors: yes
 
-    - name: Remove old deployment
-      shell: rm -rf {{ tomcat_home }}/webapps/sample-java-webapp*
-      ignore_errors: yes
+    - name: Wait after kill
+      pause:
+        seconds: 5
+
+    - name: Clean old deployment
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ tomcat_home }}/webapps/sample-java-webapp.war"
+        - "{{ tomcat_home }}/webapps/sample-java-webapp"
+        - "{{ tomcat_home }}/work/Catalina/localhost/sample-java-webapp"
 
     - name: Download WAR from Nexus
       get_url:
@@ -34,32 +40,59 @@
         dest: "{{ tomcat_home }}/webapps/sample-java-webapp.war"
         url_username: admin
         url_password: admin123
+        force: yes
+        mode: '0644'
+
+    - name: Set ownership of webapps
+      file:
+        path: "{{ tomcat_home }}/webapps"
         owner: "{{ tomcat_user }}"
         group: "{{ tomcat_user }}"
-        mode: '0644'
-        force: yes
+        recurse: yes
 
-    - name: Start Tomcat
-      shell: "nohup {{ tomcat_home }}/bin/startup.sh &"
+    - name: Set ownership of other directories
+      file:
+        path: "{{ item }}"
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_user }}"
+        recurse: yes
+      loop:
+        - "{{ tomcat_home }}/logs"
+        - "{{ tomcat_home }}/temp"
+        - "{{ tomcat_home }}/work"
+
+    - name: Start Tomcat with proper directory context
+      shell: "cd {{ tomcat_home }} && {{ tomcat_home }}/bin/startup.sh"
       args:
         executable: /bin/bash
+        chdir: "{{ tomcat_home }}"
       become_user: "{{ tomcat_user }}"
 
     - name: Wait for Tomcat to start
       wait_for:
         port: 8080
-        delay: 10
+        host: 0.0.0.0
+        delay: 15
         timeout: 60
 
-    - name: Check if application is deployed
+    - name: Verify Tomcat is running
+      shell: "ps aux | grep tomcat | grep -v grep"
+      register: tomcat_check
+      ignore_errors: yes
+
+    - name: Display Tomcat process
+      debug:
+        msg: "Tomcat is running: {{ tomcat_check.stdout }}"
+
+    - name: Test application endpoint
       uri:
         url: "http://localhost:8080/sample-java-webapp"
         status_code: 200,404
-      register: result
+      register: app_check
       retries: 5
       delay: 5
       ignore_errors: yes
 
-    - name: Display result
+    - name: Display deployment result
       debug:
-        msg: "Application URL: http://172.31.33.205:8080/sample-java-webapp"
+        msg: "✅ Deployment Successful! Access: http://13.233.88.164:8080/sample-java-webapp"

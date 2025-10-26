@@ -1,0 +1,66 @@
+#!/bin/bash
+set -e
+
+# Configuration
+MVN=/opt/maven/bin/mvn
+WORKSPACE=/var/lib/jenkins/workspace/Automated-Project
+SONAR_TOKEN="sqa_676300d2d4b500d65917c7b5a28d6bef6d9e1ba0"
+SONAR_URL="http://3.110.187.107:9000"
+PROJECT_KEY="Sample-Java-Webapp"
+
+cd $WORKSPACE
+
+echo "========================================="
+echo "CI/CD Pipeline Started"
+echo "========================================="
+
+# Step 1: Build
+echo ""
+echo "Step 1: Building with Maven..."
+$MVN clean package
+
+# Step 2: SonarQube Analysis
+echo ""
+echo "Step 2: Running SonarQube Analysis..."
+$MVN sonar:sonar \
+  -Dsonar.projectKey=$PROJECT_KEY \
+  -Dsonar.host.url=$SONAR_URL \
+  -Dsonar.login=$SONAR_TOKEN
+
+# Step 3: Quality Gate Check
+echo ""
+echo "Step 3: Checking Quality Gate..."
+sleep 30
+
+RESPONSE=$(curl -s -u ${SONAR_TOKEN}: \
+  "${SONAR_URL}/api/qualitygates/project_status?projectKey=${PROJECT_KEY}")
+
+QUALITY_GATE=$(echo "$RESPONSE" | grep -o '"status":"[^"]*"' | head -1 | cut -d'"' -f4)
+
+echo "Quality Gate Status: $QUALITY_GATE"
+
+if [ "$QUALITY_GATE" != "OK" ]; then
+    echo "❌ Quality Gate FAILED!"
+    echo "Report: ${SONAR_URL}/dashboard?id=${PROJECT_KEY}"
+    exit 1
+fi
+
+echo "✅ Quality Gate PASSED!"
+
+# Step 4: Deploy to Nexus
+echo ""
+echo "Step 4: Deploying to Nexus..."
+$MVN deploy -DskipTests
+
+# Step 5: Deploy to Tomcat
+echo ""
+echo "Step 5: Deploying to Tomcat via Ansible..."
+ansible-playbook ansible/deploy.yml \
+  -i ansible/inventory \
+  -e "workspace=$WORKSPACE"
+
+echo ""
+echo "========================================="
+echo "✅ Pipeline Completed Successfully!"
+echo "========================================="
+echo "App URL: http://172.31.33.205:8080/sample-java-webapp"

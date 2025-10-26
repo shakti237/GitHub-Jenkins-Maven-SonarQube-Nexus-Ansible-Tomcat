@@ -1,29 +1,34 @@
 ---
-- name: Deploy WAR to Tomcat server
+- name: Deploy WAR to Tomcat
   hosts: tomcat
-  become: true
-  vars:
-    nexus_user: "{{ lookup('env','NEXUS_USER') or 'admin' }}"
-    nexus_pass: "{{ lookup('env','NEXUS_PASS') or 'admin123' }}"
-    build_number: "{{ build_number | default('1') }}"
+  become: yes
+  
   tasks:
-    - name: Ensure Tomcat directory exists
-      file:
-        path: /opt/tomcat9
-        state: directory
+    - name: Stop Tomcat
+      shell: /opt/tomcat/bin/shutdown.sh
+      ignore_errors: yes
 
-    - name: Stop Tomcat (if running)
-      shell: /opt/tomcat9/bin/shutdown.sh || true
-      ignore_errors: true
+    - name: Wait 10 seconds
+      pause:
+        seconds: 10
 
-    - name: Download WAR from Nexus
-      get_url:
-        url: "http://172.31.47.6:8081/repository/maven-releases/com/demo/sample-java-webapp/1.0.{{ build_number }}/sample-java-webapp-1.0.{{ build_number }}.war"
-        dest: /opt/tomcat9/webapps/sample-java-webapp.war
-        url_username: "{{ nexus_user }}"
-        url_password: "{{ nexus_pass }}"
+    - name: Remove old WAR and folder
+      shell: |
+        rm -rf /opt/tomcat/webapps/{{ app_name }}
+        rm -f /opt/tomcat/webapps/{{ app_name }}.war
+
+    - name: Copy WAR file from Jenkins
+      copy:
+        src: "{{ war_file }}"
+        dest: /opt/tomcat/webapps/{{ app_name }}.war
 
     - name: Start Tomcat
-      shell: /opt/tomcat9/bin/startup.sh
-      args:
-        chdir: /opt/tomcat9
+      shell: /opt/tomcat/bin/startup.sh
+
+    - name: Wait for deployment
+      pause:
+        seconds: 15
+
+    - name: Show success message
+      debug:
+        msg: "App deployed at http://172.31.33.205:8080/{{ app_name }}"

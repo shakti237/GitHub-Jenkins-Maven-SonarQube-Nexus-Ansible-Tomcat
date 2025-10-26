@@ -1,0 +1,29 @@
+---
+- name: Deploy WAR to Tomcat server
+  hosts: tomcat
+  become: true
+  vars:
+    nexus_user: "{{ lookup('env','NEXUS_USER') or 'admin' }}"
+    nexus_pass: "{{ lookup('env','NEXUS_PASS') or 'admin123' }}"
+    build_number: "{{ build_number | default('1') }}"
+  tasks:
+    - name: Ensure Tomcat directory exists
+      file:
+        path: /opt/tomcat9
+        state: directory
+
+    - name: Stop Tomcat (if running)
+      shell: /opt/tomcat9/bin/shutdown.sh || true
+      ignore_errors: true
+
+    - name: Download WAR from Nexus
+      get_url:
+        url: "http://172.31.47.6:8081/repository/maven-releases/com/demo/sample-java-webapp/1.0.{{ build_number }}/sample-java-webapp-1.0.{{ build_number }}.war"
+        dest: /opt/tomcat9/webapps/sample-java-webapp.war
+        url_username: "{{ nexus_user }}"
+        url_password: "{{ nexus_pass }}"
+
+    - name: Start Tomcat
+      shell: /opt/tomcat9/bin/startup.sh
+      args:
+        chdir: /opt/tomcat9

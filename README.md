@@ -8,6 +8,20 @@ This project demonstrates a complete CI/CD pipeline using:
 
 
 
+
+
+
+
+
+
+
+<img width="426" height="630" alt="CICD_2" src="https://github.com/user-attachments/assets/c3737d56-9448-4c82-b734-4b793654bfbb" />
+
+
+
+
+
+
 ---
 
 ## 🖥️ Infrastructure (3 AWS Linux Servers)

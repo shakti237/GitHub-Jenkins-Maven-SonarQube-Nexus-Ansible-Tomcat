@@ -1,34 +1,33 @@
 ---
 - name: Deploy WAR to Tomcat
-  hosts: tomcat
+  hosts: all
   become: yes
   
   tasks:
     - name: Stop Tomcat
-      shell: /opt/tomcat/bin/shutdown.sh
+      systemd:
+        name: tomcat
+        state: stopped
       ignore_errors: yes
 
-    - name: Wait 10 seconds
-      pause:
-        seconds: 10
+    - name: Remove old deployment
+      shell: rm -rf /opt/tomcat/webapps/sample-java-webapp*
+      ignore_errors: yes
 
-    - name: Remove old WAR and folder
-      shell: |
-        rm -rf /opt/tomcat/webapps/{{ app_name }}
-        rm -f /opt/tomcat/webapps/{{ app_name }}.war
-
-    - name: Copy WAR file from Jenkins
-      copy:
-        src: "{{ war_file }}"
-        dest: /opt/tomcat/webapps/{{ app_name }}.war
+    - name: Download WAR from Nexus
+      get_url:
+        url: "http://172.31.47.6:8081/repository/maven-releases/com/demo/sample-java-webapp/1.0.0/sample-java-webapp-1.0.0.war"
+        dest: "/opt/tomcat/webapps/sample-java-webapp.war"
+        url_username: admin
+        url_password: admin123
+        force: yes
 
     - name: Start Tomcat
-      shell: /opt/tomcat/bin/startup.sh
+      systemd:
+        name: tomcat
+        state: started
 
-    - name: Wait for deployment
-      pause:
-        seconds: 15
-
-    - name: Show success message
-      debug:
-        msg: "App deployed at http://172.31.33.205:8080/{{ app_name }}"
+    - name: Wait for Tomcat
+      wait_for:
+        port: 8080
+        delay: 10

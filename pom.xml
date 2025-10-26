@@ -42,11 +42,11 @@
     
     <!-- Distribution to Nexus - UPDATED IP -->
     <distributionManagement>
-        <repository>
-            <id>nexus</id>
-            <name>Nexus Releases</name>
-            <url>http://172.31.35.3:8081/repository/maven-releases/</url>
-        </repository>
-    </distributionManagement>
+    <repository>
+        <id>nexus</id>
+        <name>Nexus Releases</name>
+        <url>http://172.31.47.6:8081/repository/maven-releases/</url>
+    </repository>
+</distributionManagement>
     
 </project>

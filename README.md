@@ -1,27 +1,41 @@
-# Sample Java CI/CD Project
+# 🚀 Sample Java CI/CD Project
 
-This sample project demonstrates a complete CI/CD pipeline integrating:
-GitHub → Jenkins → Maven → SonarQube → Nexus → Docker → Ansible → Tomcat.
+This project demonstrates a complete CI/CD pipeline using:
 
-**Environment (provided by user):**
-- Java: 11
-- Maven: 3.9.6
-- Jenkins IP: 172.31.34.19
-- SonarQube & Nexus IP: 172.31.47.6
-- Tomcat/Ansible IP: 172.31.33.205
+**GitHub → Jenkins → Maven → SonarQube → Nexus → Ansible → Tomcat**
 
-This ZIP contains:
-- A simple Maven WAR webapp (`src/`) with a servlet and JSP.
-- `pom.xml` configured for war packaging and Sonar.
-- `Jenkinsfile` (Declarative Pipeline) to run build, Sonar, deploy to Nexus, build Docker, and run Ansible.
-- `Dockerfile` (Tomcat-based) to containerize the WAR.
-- `ansible/` folder with `deploy.yml` and `inventory`.
-- `settings.xml.sample` for Maven (user must add Nexus credentials).
-- `sonar-project.properties` sample.
-- `.gitignore`
+<img width="638" height="522" alt="CICD" src="https://github.com/user-attachments/assets/9ce25304-e84b-4d6a-a4f3-1a7146329d90" />
 
-**Notes**
-- Nexus/Sonarqube credentials and Jenkins credentials must be configured in your Jenkins instance (no secrets stored here).
-- By default this project deploys the WAR to Tomcat via Ansible (recommended, simpler). The Dockerfile is included if you prefer containerized Tomcat.
-- After extracting, push to GitHub and configure Jenkins to pull from your repo.
+
+
+---
+
+## 🖥️ Infrastructure (3 AWS Linux Servers)
+
+- **Jenkins Server**: Jenkins + Maven + Ansible  
+- **Quality Server**: SonarQube + Nexus  
+- **Deploy Server**: Apache Tomcat  
+
+---
+
+## 📦 Project Contents
+
+- `src/` – Simple WAR webapp (Servlet + JSP)  
+- `pom.xml` – WAR packaging + Sonar config  
+- `Jenkinsfile` – Build, test, Sonar scan, deploy to Nexus, Docker build, Ansible deploy  
+- `Dockerfile` – Tomcat-based container (optional)  
+- `ansible/` – `deploy.yml` + inventory  
+- `settings.xml.sample` – Add your Nexus credentials  
+- `sonar-project.properties` – Sample Sonar config  
+- `.gitignore` – Clean repo setup  
+
+---
+
+## 🔐 Notes
+
+- Nexus, SonarQube, and Jenkins credentials must be configured in Jenkins (not stored in this repo)  
+- Default deployment uses **Ansible to Tomcat** (recommended)  
+- Dockerfile is included for optional containerized deployment  
+- After setup, push to GitHub and configure Jenkins to pull and build  
+
 
